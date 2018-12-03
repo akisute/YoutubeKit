@@ -92,25 +92,29 @@ public enum VideoListType: String {
     case playlist       = "playlist"
 }
 
-/// All of the following video parameters. This parameters are optional.
+///
+/**
+ All of the following video parameters. This parameters are optional.
+ - note: This enum does not provide `autoplay` **by intension** because it NEVER works due to the restriction of WebKit (or Safari) in iOS,
+ that is, a video must be muted to be autoplayed. And there is no way to mute the video player in YouTube iframe API BEFORE the autoplay kicks in.
+ See https://developers.google.com/web/updates/2016/07/autoplay for more info.
+ - seealso: [Player Parameters](https://developers.google.com/youtube/player_parameters?playerVersion=HTML5)
+ */
 public enum VideoEmbedParameter {
-    
-    /// This indicates whether the initial video will automatically start to play when the player loads. Default value is `false`.
-    case autoplay(Bool)
     
     /// If the value is `true`, It causes closed captions to be shown by default, even if the user has turned captions off. Default value is based on user preference.
     case alwaysShowCaption(Bool)
     
     /**
-      This parameter specifies the color that will be used in the player's video progress bar to highlight the amount of the video that the viewer has already seen. Valid parameter values are red and white, and, by default, the player uses the color red in the video progress bar. See the YouTube API blog for more information about color options.
+     This parameter specifies the color that will be used in the player's video progress bar to highlight the amount of the video that the viewer has already seen. Valid parameter values are red and white, and, by default, the player uses the color red in the video progress bar. See the YouTube API blog for more information about color options.
      
      - note:  Setting the color parameter to white will disable the modestbranding option.
      */
     case progressBarColor(VideoProgressBarColor)
     
     /**
-      This parameter indicates whether the video player controls are displayed.
- 
+     This parameter indicates whether the video player controls are displayed.
+     
      - note: The parameter values `show` and `showAfterPlaying` are intended to provide an identical user experience, but `showAfterPlaying` provides a performance improvement over `show` for IFrame embeds. Default value is `show`.
      */
     case showControls(VideoControlAppearance)
@@ -122,14 +126,14 @@ public enum VideoEmbedParameter {
     case enableJavaScriptAPI(Bool)
     
     /**
-      This parameter causes the player to begin playing the video at the given number of seconds from the start of the video. The parameter value is a positive integer.
+     This parameter causes the player to begin playing the video at the given number of seconds from the start of the video. The parameter value is a positive integer.
      
      - note: Similar to the seekTo function, the player will look for the closest keyframe to the time you specify. This means that sometimes the play head may seek to just before the requested time, usually no more than around two seconds.
      */
     case registerStartTimeAt(Int)
     
     /**
-      This parameter specifies the time, measured in seconds from the start of the video, when the player should stop playing the video. The parameter value is a positive integer.
+     This parameter specifies the time, measured in seconds from the start of the video, when the player should stop playing the video. The parameter value is a positive integer.
      
      - note: The time is measured from the beginning of the video and not from either the value of the start player parameter or the startSeconds parameter, which is used in YouTube Player API functions for loading or queueing a video.
      */
@@ -139,7 +143,7 @@ public enum VideoEmbedParameter {
     case showFullScreenButton(Bool)
     
     /**
-      This parameter represents the player's interface language. The parameter value is an ISO 639-1 two-letter language code or a fully specified locale. The interface language is used for tooltips in the player and also affects the default caption track.
+     This parameter represents the player's interface language. The parameter value is an ISO 639-1 two-letter language code or a fully specified locale. The interface language is used for tooltips in the player and also affects the default caption track.
      
      - note: YouTube might select a different caption track language for a particular user based on the user's individual language preferences and the availability of caption tracks.
      - seealso: [ISO 639-1](http://www.loc.gov/standards/iso639-2/php/code_list.php)
@@ -156,14 +160,14 @@ public enum VideoEmbedParameter {
     case list(String)
     
     /**
-      In the case of a single video player, a setting of `true` causes the player to play the initial video again and again. In the case of a playlist player, the player plays the entire playlist and then starts again at the first video.
- 
+     In the case of a single video player, a setting of `true` causes the player to play the initial video again and again. In the case of a playlist player, the player plays the entire playlist and then starts again at the first video.
+     
      - note: This parameter has limited support in the AS3 player and in IFrame embeds, which could load either the AS3 or HTML5 player. This library uses video player based on HTML5, so this will work.
      */
     case loopVideo(Bool)
     
     /**
-      This parameter lets you use a YouTube player that does not show a YouTube logo. Set the parameter value to `true` to prevent the YouTube logo from displaying in the control bar.
+     This parameter lets you use a YouTube player that does not show a YouTube logo. Set the parameter value to `true` to prevent the YouTube logo from displaying in the control bar.
      - note: A small YouTube text label will still display in the upper-right corner of a paused video when the user's mouse pointer hovers over the player.
      */
     case showModestbranding(Bool)
@@ -189,8 +193,6 @@ public enum VideoEmbedParameter {
     /// The player parameter.
     public var property: (key: String, value: AnyObject) {
         switch self {
-        case .autoplay(let isOn):
-            return ("autoplay", isOn.jsValue)
         case .alwaysShowCaption(let isOn):
             return ("cc_load_policy", isOn.jsValue)
         case .progressBarColor(let color):

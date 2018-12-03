@@ -16,14 +16,20 @@ final class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Create a new player
-        player = YTSwiftyPlayer(
-            frame: CGRect(x: 0, y: 0, width: 640, height: 480),
-            playerVars: [.playsInline(true), .videoID("_6u6UrtXUEI"), .loopVideo(true), .showRelatedVideo(false)])
-
-        // Enable auto playback when video is loaded
-        player.autoplay = true
+        // Prepare parameters for a new player
+        let parameters: [VideoEmbedParameter] = [
+            .playsInline(true),
+            .videoID("_6u6UrtXUEI"),
+            .loopVideo(true),
+            .showRelatedVideo(false)
+        ]
         
+        // Create a new player
+        player = YTSwiftyPlayer(frame: CGRect(x: 0, y: 0, width: 640, height: 480), parameters: parameters)
+        
+        // Enable autoplay
+        player.autoplayOnReady = true
+
         // Set player view
         view = player
 

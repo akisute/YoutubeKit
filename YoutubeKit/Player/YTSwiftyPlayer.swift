@@ -14,40 +14,62 @@ import WebKit
  * - note: This class is not support interface builder due to use `WKWebView`.
  * For more information: [https://developer.apple.com/documentation/webkit/wkwebview](https://developer.apple.com/documentation/webkit/wkwebview)
  */
-open class YTSwiftyPlayer: WKWebView {
+public class YTSwiftyPlayer: WKWebView {
     
-    /// The property for easily set auto playback.
-    open var autoplay = false
-
-    open weak var delegate: YTSwiftyPlayerDelegate?
-
-    open private(set) var isMuted = false
+    public weak var delegate: YTSwiftyPlayerDelegate?
     
-    open private(set) var playbackRate: Double = 1.0
+    /**
+     Automatically plays the video programmatically at the moment of the `onReady` event.
+     This property is provided because the WebKit (or Safari) in iOS has a strict restriction for autoplaying videos using the HTML5 feature,
+     that is, a video must be muted to be autoplayed. See https://developers.google.com/web/updates/2016/07/autoplay for more info.
+     By using this property:
+     - You can reliably autoplay videos.
+     - You can autoplay videos without muting the player.
+     Note that this property tries to play the video at `onReady`. If you do not specify the `videoId` before `loadPlayer()`,
+     this property can do anything at all. In that case, call `playVideo()` manually.
+     */
+    public var autoplayOnReady: Bool = false
     
-    open private(set) var availablePlaybackRates: [Double] = [1]
+    /**
+     Automatically plays the video programmatically at the moment of the `onReady` event.
+     This property is provided because the YouTube iframe API does not have any means to load the `muted` player.
+     This causes multiple problems, such as:
+     - You need to call mute() manually if you want to provide a muted video, which is bothering.
+     - `autoplay` playerVar does not work because a video must be muted to be autoplayed by HTML5 feature in iOS: (https://developers.google.com/web/updates/2016/07/autoplay)
+     This property also guarantees to mute the player before the `autoplayOnReady` property kicks in.
+     */
+    public var automuteOnReady: Bool = false
     
-    open private(set) var availableQualityLevels: [YTSwiftyVideoQuality] = []
+    /// `true` when the player is loaded and ready to play videos and evaluate JS requests, such as `mute()`.
+    public private(set) var isPlayerReady = false
     
-    open private(set) var bufferedVideoRate: Double = 0
-
-    open private(set) var currentPlaylist: [String] = []
+    public private(set) var isMuted = false
     
-    open private(set) var currentPlaylistIndex: Int = 0
+    public private(set) var playbackRate: Double = 1.0
     
-    open private(set) var currentVideoURL: String?
+    public private(set) var availablePlaybackRates: [Double] = [1]
     
-    open private(set) var currentVideoEmbedCode: String?
-
-    open private(set) var playerState: YTSwiftyPlayerState = .unstarted
+    public private(set) var availableQualityLevels: [YTSwiftyVideoQuality] = []
     
-    open private(set) var playerQuality: YTSwiftyVideoQuality = .unknown
-
-    open private(set) var duration: Double?
-
-    open private(set) var currentTime: Double = 0.0
- 
-    private var playerVars: [String: AnyObject] = [:]
+    public private(set) var bufferedVideoRate: Double = 0
+    
+    public private(set) var currentPlaylist: [String] = []
+    
+    public private(set) var currentPlaylistIndex: Int = 0
+    
+    public private(set) var currentVideoURL: String?
+    
+    public private(set) var currentVideoEmbedCode: String?
+    
+    public private(set) var playerState: YTSwiftyPlayerState = .unstarted
+    
+    public private(set) var playerQuality: YTSwiftyVideoQuality = .unknown
+    
+    public private(set) var duration: Double?
+    
+    public private(set) var currentTime: Double = 0.0
+    
+    public var playerVars: [String: AnyObject] = [:]
     
     private let callbackHandlers: [YTSwiftyPlayerEvent] = [
         .onYoutubeIframeAPIReady,
@@ -61,7 +83,7 @@ open class YTSwiftyPlayer: WKWebView {
         .onUpdateCurrentTime
     ]
     
-    static private var defaultConfiguration: WKWebViewConfiguration {
+    private static var defaultConfiguration: WKWebViewConfiguration {
         let config = WKWebViewConfiguration()
         config.allowsAirPlayForMediaPlayback = true
         config.allowsInlineMediaPlayback = true
@@ -69,15 +91,16 @@ open class YTSwiftyPlayer: WKWebView {
         return config
     }
     
-    public init(frame: CGRect = .zero, playerVars: [String: AnyObject]) {
-        let config = YTSwiftyPlayer.defaultConfiguration
-        let userContentController = WKUserContentController()
-        config.userContentController = userContentController
+    public init(frame: CGRect, playerVars: [String: AnyObject], configuration: WKWebViewConfiguration? = nil) {
+        let config = configuration ?? YTSwiftyPlayer.defaultConfiguration
+        // `mediaTypesRequiringUserActionForPlayback` must be empty in order to play videos properly without user interactions,
+        // So the value is overwritten here no matter what.
+        config.mediaTypesRequiringUserActionForPlayback = []
         
         super.init(frame: frame, configuration: config)
         
         callbackHandlers.forEach {
-            userContentController.add(self, name: $0.rawValue)
+            config.userContentController.add(self, name: $0.rawValue)
         }
         
         commonInit()
@@ -85,43 +108,34 @@ open class YTSwiftyPlayer: WKWebView {
         self.playerVars = playerVars
     }
     
-    public init(frame: CGRect = .zero, playerVars: [VideoEmbedParameter] = []) {
-        let config = YTSwiftyPlayer.defaultConfiguration
-        let userContentController = WKUserContentController()
-        config.userContentController = userContentController
-
+    public init(frame: CGRect, parameters: [VideoEmbedParameter], configuration: WKWebViewConfiguration? = nil) {
+        let config = configuration ?? YTSwiftyPlayer.defaultConfiguration
+        // `mediaTypesRequiringUserActionForPlayback` must be empty in order to play videos properly without user interactions,
+        // So the value is overwritten here no matter what.
+        config.mediaTypesRequiringUserActionForPlayback = []
+        
         super.init(frame: frame, configuration: config)
-
+        
         callbackHandlers.forEach {
-            userContentController.add(self, name: $0.rawValue)
+            config.userContentController.add(self, name: $0.rawValue)
         }
-
+        
         commonInit()
-
-        guard !playerVars.isEmpty else { return }
-        var params: [String: AnyObject] = [:]
-        playerVars.forEach {
-            let property = $0.property
-            params[property.key] = property.value
-        }
-        self.playerVars = params
+        
+        self.setPlayerParameters(parameters)
     }
     
     required public init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func setPlayerParameters(_ parameters: [String: AnyObject]) {
-        self.playerVars = parameters
-    }
-    
     public func setPlayerParameters(_ parameters: [VideoEmbedParameter]) {
-        var params: [String: AnyObject] = [:]
+        var vars: [String: AnyObject] = [:]
         parameters.forEach {
             let property = $0.property
-            params[property.key] = property.value
+            vars[property.key] = property.value
         }
-        self.playerVars = params
+        self.playerVars = vars
     }
     
     public func playVideo() {
@@ -213,15 +227,15 @@ open class YTSwiftyPlayer: WKWebView {
     public func loadPlaylist(playlist: [String], startIndex: Int = 0, startSeconds: Int = 0, suggestedQuality: YTSwiftyVideoQuality = .large) {
         evaluatePlayerCommand("loadPlaylist('\(playlist.joined(separator: ","))',\(startIndex),\(startSeconds),'\(suggestedQuality.rawValue)')")
     }
-
+    
     public func loadPlaylist(withVideoIDs ids: [String]) {
         evaluatePlayerCommand("loadPlaylist('\(ids.joined(separator: ","))')")
     }
-
+    
     public func loadPlayer() {
         let currentBundle = Bundle(for: YTSwiftyPlayer.self)
         let path = currentBundle.path(forResource: "player", ofType: "html")!
-        let htmlString = try? String(contentsOfFile: path, encoding: String.Encoding.utf8)
+        let htmlString = try! String(contentsOfFile: path, encoding: String.Encoding.utf8)
         let events: [String: AnyObject] = {
             var registerEvents: [String: AnyObject] = [:]
             callbackHandlers.forEach {
@@ -241,11 +255,15 @@ open class YTSwiftyPlayer: WKWebView {
             parameters["videoId"] = videoID
         }
         
-        guard let json = try? JSONSerialization.data(withJSONObject: parameters, options: []),
-            let jsonString = String(data: json, encoding: String.Encoding.utf8),
-            let html = htmlString?.replacingOccurrences(of: "%@", with: jsonString),
-            let baseUrl = URL(string: "https://www.youtube.com") else { return }
-        
+        guard let json = try? JSONSerialization.data(withJSONObject: parameters, options: []) else {
+            fatalError("JSON serialization of the YouTube iframe API parameters failed. It may be caused by the malformed `playerVars` property: \(playerVars)")
+        }
+        guard let jsonString = String(data: json, encoding: String.Encoding.utf8) else {
+            fatalError("JSON stringify of the YouTube iframe API parameters failed. This may happen when `playerVars` contains non-UTF8 characters: \(playerVars)")
+        }
+        let html = htmlString.replacingOccurrences(of: "%@", with: jsonString)
+        let baseUrl = URL(string: "https://www.youtube.com")!
+        NSLog("Loading HTML:\n\(html)")
         loadHTMLString(html, baseURL: baseUrl)
     }
     
@@ -277,14 +295,10 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
         guard let event = YTSwiftyPlayerEvent(rawValue: message.name) else { return }
         switch event {
         case .onReady:
-            delegate?.playerReady(self)
-            
-            // The HTML5 video element, in certain mobile browsers, only allows playback to take place if it's initiated by a user interaction, due to this restriction, functions and parameters such as autoplay, playVideo(), loadVideoById() won't work in all mobile environments.
-            // So it have to call explicit `playVideo()` to work autoplay in mobile environment.
-            if autoplay || playerVars.contains(where: { $0.key == "autoplay" && String(describing: $0.value) == "1" }) {
-                playVideo()
-            }
+            isPlayerReady = true
+            handleAutoplayAndAutomute()
             updateInfo()
+            delegate?.playerReady(self)
         case .onStateChange:
             updateState(message.body as? Int)
             let isLoop = playerVars["loop"] as? String == "1"
@@ -320,6 +334,25 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     // MARK: - Private Methods
+    
+    private func handleAutoplayAndAutomute() {
+        switch (autoplayOnReady, automuteOnReady) {
+        case (true, true):
+            // automute first, then autoplay
+            evaluatePlayerCommand("mute()") { [weak self] result in
+                guard let me = self, result != nil else { return }
+                me.isMuted = true
+                me.playVideo()
+            }
+        case (true, false):
+            // autoplay only
+            playVideo()
+        case (false, true):
+            // automute only
+            mute()
+        default: break
+        }
+    }
     
     private func updateInfo() {
         updateMute()
@@ -362,7 +395,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
             guard let me = self,
                 let availableQualityLevels = result as? [String] else { return }
             me.availableQualityLevels = availableQualityLevels
-              .compactMap { YTSwiftyVideoQuality(rawValue: $0) }
+                .compactMap { YTSwiftyVideoQuality(rawValue: $0) }
         }
     }
     
