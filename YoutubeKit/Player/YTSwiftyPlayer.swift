@@ -263,7 +263,6 @@ public class YTSwiftyPlayer: WKWebView {
         }
         let html = htmlString.replacingOccurrences(of: "%@", with: jsonString)
         let baseUrl = URL(string: "https://www.youtube.com")!
-        NSLog("Loading HTML:\n\(html)")
         loadHTMLString(html, baseURL: baseUrl)
     }
     
