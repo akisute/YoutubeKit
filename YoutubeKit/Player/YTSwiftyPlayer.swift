@@ -233,9 +233,6 @@ public class YTSwiftyPlayer: WKWebView {
     }
     
     public func loadPlayer() {
-        let currentBundle = Bundle(for: YTSwiftyPlayer.self)
-        let path = currentBundle.path(forResource: "player", ofType: "html")!
-        let htmlString = try! String(contentsOfFile: path, encoding: String.Encoding.utf8)
         let events: [String: AnyObject] = {
             var registerEvents: [String: AnyObject] = [:]
             callbackHandlers.forEach {
@@ -261,7 +258,7 @@ public class YTSwiftyPlayer: WKWebView {
         guard let jsonString = String(data: json, encoding: String.Encoding.utf8) else {
             fatalError("JSON stringify of the YouTube iframe API parameters failed. This may happen when `playerVars` contains non-UTF8 characters: \(playerVars)")
         }
-        let html = htmlString.replacingOccurrences(of: "%@", with: jsonString)
+        let html = YTSwiftyPlayerHTML.htmlString(playerArgs: jsonString)
         let baseUrl = URL(string: "https://www.youtube.com")!
         loadHTMLString(html, baseURL: baseUrl)
     }
@@ -269,6 +266,7 @@ public class YTSwiftyPlayer: WKWebView {
     // MARK: - Private Methods
     
     private func commonInit() {
+        backgroundColor = .clear
         scrollView.bounces = false
         scrollView.isScrollEnabled = false
         isUserInteractionEnabled = true

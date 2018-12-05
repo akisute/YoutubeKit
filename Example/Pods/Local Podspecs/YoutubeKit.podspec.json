@@ -18,6 +18,5 @@
   "platforms": {
     "ios": "10.0"
   },
-  "source_files": "YoutubeKit/**/*",
-  "resources": "YoutubeKit/player.html"
+  "source_files": "YoutubeKit/**/*"
 }

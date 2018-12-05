@@ -15,6 +15,5 @@ YoutubeKit, forked. Original: https://github.com/rinov/YoutubeKit
   s.ios.deployment_target = '10.0'
 
   s.source_files = 'YoutubeKit/**/*'
-  s.resources    = 'YoutubeKit/player.html'
 
  end
