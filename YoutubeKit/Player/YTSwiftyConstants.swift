@@ -74,27 +74,40 @@ public enum VideoProgressBarColor: String {
 
 /// This parameter indicates whether the video player controls are displayed. Default value is `show`.
 public enum VideoControlAppearance: Int {
-    case hidden
-    case show
-    case showAfterPlaying
+    case hidden = 0
+    case show = 1
 }
 
 /// The list parameter, in conjunction with the listType parameter, identifies the content that will load in the player.
 public enum VideoListType: String {
-    
     ///  The list parameter value specifies the search query.
-    case search         = "search"
-    
+    case search = "search"
     /// The list parameter value identifies the YouTube channel whose uploaded videos will be loaded.
-    case userUploads    = "user_uploads"
-    
+    case userUploads = "user_uploads"
     /// The list parameter value specifies a YouTube playlist ID. In the parameter value, you need to prepend the playlist ID with the letters PL as shown in the example below.
-    case playlist       = "playlist"
+    case playlist = "playlist"
 }
 
-///
+/// The video annotation policy values. Default value is `show`.
+public enum VideoAnnotationPolicy: Int {
+    case show = 1
+    case hidden = 3
+}
+
 /**
- All of the following video parameters. This parameters are optional.
+ The policy for related videos that are shown after the initial video is finished. The default value is `showAll`.
+ https://developers.google.com/youtube/player_parameters?playerVersion=HTML5#release_notes_08_23_2018
+ */
+public enum RelatedVideoPolicy: Int {
+    /// The player will show related videos that are from the same channel as the video that was just played.
+    case sameChannelOnly = 0
+    /// The player does show related videos from all video sources.
+    case showAll = 1
+}
+
+
+/**
+ All available parameters for YouTube Embedded Players. These parameters are optional.
  - note: This enum does not provide `autoplay` **by intension** because it NEVER works due to the restriction of WebKit (or Safari) in iOS,
  that is, a video must be muted to be autoplayed. And there is no way to mute the video player in YouTube iframe API BEFORE the autoplay kicks in.
  See https://developers.google.com/web/updates/2016/07/autoplay for more info.
@@ -102,13 +115,22 @@ public enum VideoListType: String {
  */
 public enum VideoEmbedParameter {
     
+    /**
+     This parameter specifies the default language that the player will use to display captions. Set the parameter's value to an ISO 639-1 two-letter language code.
+     If you use this parameter and also set the cc_load_policy parameter to 1, then the player will show captions in the specified language when the player loads.
+     If you do not also set the cc_load_policy parameter, then captions will not display by default, but will display in the specified language if the user opts to turn captions on.
+     
+     - seealso: [ISO 639-1](http://www.loc.gov/standards/iso639-2/php/code_list.php)
+     */
+    case captionLanguage(String)
+    
     /// If the value is `true`, It causes closed captions to be shown by default, even if the user has turned captions off. Default value is based on user preference.
     case alwaysShowCaption(Bool)
     
     /**
      This parameter specifies the color that will be used in the player's video progress bar to highlight the amount of the video that the viewer has already seen. Valid parameter values are red and white, and, by default, the player uses the color red in the video progress bar. See the YouTube API blog for more information about color options.
      
-     - note:  Setting the color parameter to white will disable the modestbranding option.
+     - note: Setting the color parameter to white will disable the modestbranding option.
      */
     case progressBarColor(VideoProgressBarColor)
     
@@ -150,8 +172,8 @@ public enum VideoEmbedParameter {
      */
     case playerLanguage(String)
     
-    /// Setting the parameter's value to `true` causes video annotations to be shown, whereas setting to `false` causes video annotations to not be shown. Default value is true.
-    case showLoadPolicy(Bool)
+    /// Setting the parameter's value to `show` causes video annotations to be shown by default, whereas setting to `hidden` causes video annotations to not be shown by default. The default value is `show`.
+    case annotationPolicy(VideoAnnotationPolicy)
     
     /// The listType parameter, in conjunction with the list parameter, identifies the content that will load in the player.
     case listType(VideoListType)
@@ -184,15 +206,21 @@ public enum VideoEmbedParameter {
     /// This parameter controls whether videos play inline or fullscreen. Default value is `false`.
     case playsInline(Bool)
     
-    /// This parameter indicates whether the player should show related videos when playback of the initial video ends. Default value is `true`.
-    case showRelatedVideo(Bool)
+    /// This parameter indicates how the player should show related videos when playback of the initial video ends. Default value is `showAll`.
+    case relatedVideoPolicy(RelatedVideoPolicy)
     
-    /// Setting the parameter's value to `false` causes the player to not display information like the video title and uploader before the video starts playing. If the player is loading a playlist, and you explicitly set the parameter value to 1, then, upon loading, the player will also display thumbnail images for the videos in the playlist. Note that this functionality is only supported for the AS3 player.
-    case showInfo(Bool)
+    /**
+     This parameter identifies the URL where the player is embedded.
+     This value is used in YouTube Analytics reporting when the YouTube player is embedded in a widget, and that widget is then embedded in a web page or application.
+     In that scenario, the origin parameter identifies the widget provider's domain, but YouTube Analytics should not identify the widget provider as the actual traffic source. Instead, YouTube Analytics uses the widget_referrer parameter value to identify the domain associated with the traffic source.
+     */
+    case widgetReferrer(String)
     
     /// The player parameter.
     public var property: (key: String, value: AnyObject) {
         switch self {
+        case .captionLanguage(let isoCode):
+            return ("cc_lang_pref", isoCode as AnyObject)
         case .alwaysShowCaption(let isOn):
             return ("cc_load_policy", isOn.jsValue)
         case .progressBarColor(let color):
@@ -211,8 +239,8 @@ public enum VideoEmbedParameter {
             return ("fs", isShow.jsValue)
         case .playerLanguage(let isoCode):
             return ("hl", isoCode as AnyObject)
-        case .showLoadPolicy(let isShow):
-            return ("iv_load_policy", isShow.jsValue)
+        case .annotationPolicy(let annotationPolicy):
+            return ("iv_load_policy", annotationPolicy.rawValue as AnyObject)
         case .listType(let type):
             return ("listType", type.rawValue as AnyObject)
         case .list(let value):
@@ -229,10 +257,10 @@ public enum VideoEmbedParameter {
             return ("videoId", id as AnyObject)
         case .playsInline(let isOn):
             return ("playsinline", isOn.jsValue)
-        case .showRelatedVideo(let isShow):
-            return ("rel", isShow.jsValue)
-        case .showInfo(let isShow):
-            return ("showinfo", isShow.jsValue)
+        case .relatedVideoPolicy(let relatedVideoPolicy):
+            return ("rel", relatedVideoPolicy.rawValue as AnyObject)
+        case .widgetReferrer(let domain):
+            return ("widget_referrer", domain as AnyObject)
         }
     }
 }

@@ -20,8 +20,7 @@ final class ViewController: UIViewController {
         let parameters: [VideoEmbedParameter] = [
             .playsInline(true),
             .videoID("_6u6UrtXUEI"),
-            .loopVideo(true),
-            .showRelatedVideo(false)
+            .loopVideo(true)
         ]
         
         // Create a new player
