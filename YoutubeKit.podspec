@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'YoutubeKit'
-  s.version          = '0.3.0+akisute'
+  s.version          = '0.3.1+akisute'
   s.summary          = 'YoutubeKit, forked.'
 
   s.description      = <<-DESC

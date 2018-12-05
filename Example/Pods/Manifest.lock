@@ -1,5 +1,5 @@
 PODS:
-  - "YoutubeKit (0.3.0+akisute)"
+  - "YoutubeKit (0.3.1+akisute)"
 
 DEPENDENCIES:
   - YoutubeKit (from `../`)
@@ -9,7 +9,7 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  YoutubeKit: 90369b10afacf9e806267a9f2664547b318a4e76
+  YoutubeKit: 59766c61651bca11ab9cdb4fa2b8f77b181af0c9
 
 PODFILE CHECKSUM: b830357761c5a54ee549d30b9fc59092ba128670
 
