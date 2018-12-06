@@ -1,6 +1,6 @@
 {
   "name": "YoutubeKit",
-  "version": "0.3.1+akisute",
+  "version": "0.3.2+akisute",
   "summary": "YoutubeKit, forked.",
   "description": "YoutubeKit, forked. Original: https://github.com/rinov/YoutubeKit",
   "homepage": "https://github.com/akisute/YoutubeKit",
@@ -13,7 +13,7 @@
   },
   "source": {
     "git": "https://github.com/akisute/YoutubeKit.git",
-    "tag": "0.3.1+akisute"
+    "tag": "0.3.2+akisute"
   },
   "platforms": {
     "ios": "10.0"
