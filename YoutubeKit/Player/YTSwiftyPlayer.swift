@@ -159,15 +159,19 @@ public class YTSwiftyPlayer: WKWebView {
     }
     
     public func mute() {
-        evaluatePlayerCommand("mute()") { [weak self] result in
-            guard result != nil else { return }
+        evaluatePlayerCommand("mute()") { [weak self] _, error in
+            if let error = error, !YTSwiftyPlayer.isVoidReturn(error: error) {
+                return
+            }
             self?.isMuted = true
         }
     }
     
     public func unMute() {
-        evaluatePlayerCommand("unMute()") { [weak self] result in
-            guard result != nil else { return }
+        evaluatePlayerCommand("unMute()") { [weak self] _, error in
+            if let error = error, !YTSwiftyPlayer.isVoidReturn(error: error) {
+                return
+            }
             self?.isMuted = false
         }
     }
@@ -273,15 +277,26 @@ public class YTSwiftyPlayer: WKWebView {
         translatesAutoresizingMaskIntoConstraints = false
     }
     
-    // Evaluate javascript command and convert to simple error(nil) if an error is occurred.
-    private func evaluatePlayerCommand(_ commandName: String, callbackHandler: ((Any?) -> ())? = nil) {
+    private func evaluatePlayerCommand(_ commandName: String, callbackHandler: ((Any?, Error?) -> (Void))? = nil) {
         let command = "player.\(commandName);"
-        evaluateJavaScript(command) { (result, error) in
-            if error != nil {
-                callbackHandler?(nil)
-                return
-            }
-            callbackHandler?(result)
+        evaluateJavaScript(command, completionHandler: callbackHandler)
+    }
+    
+    /**
+     Returns `true` if the given `error` is caused by evaluating the JS function which returns `void`.
+     This is because the current WebKit2 implementation throws `WKErrorJavaScriptResultTypeIsUnsupported` of `WKErrorDomain`
+     when the serialization result of the returned value of the evaluated JS function is `nil`.
+     And the `void`, which means `undefined` in the JS, cannot be serialized and returns `nil`, causing this error.
+     https://opensource.apple.com/source/WebKit2/WebKit2-7601.1.46.9/UIProcess/API/Cocoa/WKWebView.mm.auto.html
+     
+     It's just absolutely bullshit. Why returns error just calling a `void` function...?
+     */
+    private static func isVoidReturn(error: Error) -> Bool {
+        if let wkError = error as? WKError {
+            return wkError.errorCode == WKError.Code.javaScriptResultTypeIsUnsupported.rawValue
+        } else {
+            let nsError = error as NSError
+            return nsError.domain == WKErrorDomain && nsError.code == WKError.Code.javaScriptResultTypeIsUnsupported.rawValue
         }
     }
 }
@@ -336,8 +351,11 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
         switch (autoplayOnReady, automuteOnReady) {
         case (true, true):
             // automute first, then autoplay
-            evaluatePlayerCommand("mute()") { [weak self] result in
-                guard let me = self, result != nil else { return }
+            evaluatePlayerCommand("mute()") { [weak self] _, error in
+                guard let me = self else { return }
+                if let error = error, !YTSwiftyPlayer.isVoidReturn(error: error) {
+                    return
+                }
                 me.isMuted = true
                 me.playVideo()
             }
@@ -364,7 +382,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updateMute() {
-        evaluatePlayerCommand("isMuted()") { [weak self] result in
+        evaluatePlayerCommand("isMuted()") { [weak self] result, _ in
             guard let me = self,
                 let isMuted = result as? Bool else { return }
             me.isMuted = isMuted
@@ -372,7 +390,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updatePlaybackRate() {
-        evaluatePlayerCommand("getPlaybackRate()") { [weak self] result in
+        evaluatePlayerCommand("getPlaybackRate()") { [weak self] result, _ in
             guard let me = self,
                 let playbackRate = result as? Double else { return }
             me.playbackRate = playbackRate
@@ -380,7 +398,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updateVideoLoadedFraction() {
-        evaluatePlayerCommand("getVideoLoadedFraction()") { [weak self] result in
+        evaluatePlayerCommand("getVideoLoadedFraction()") { [weak self] result, _ in
             guard let me = self,
                 let bufferedVideoRate = result as? Double else { return }
             me.bufferedVideoRate = bufferedVideoRate
@@ -388,7 +406,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updateAvailableQualityLevels() {
-        evaluatePlayerCommand("getAvailableQualityLevels()") { [weak self] result in
+        evaluatePlayerCommand("getAvailableQualityLevels()") { [weak self] result, _ in
             guard let me = self,
                 let availableQualityLevels = result as? [String] else { return }
             me.availableQualityLevels = availableQualityLevels
@@ -397,7 +415,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updateCurrentVideoURL() {
-        evaluatePlayerCommand("getVideoUrl()") { [weak self] result in
+        evaluatePlayerCommand("getVideoUrl()") { [weak self] result, _ in
             guard let me = self,
                 let url = result as? String else { return }
             me.currentVideoURL = url
@@ -405,7 +423,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updateCurrentVideoEmbedCode() {
-        evaluatePlayerCommand("getVideoEmbedCode()") { [weak self] result in
+        evaluatePlayerCommand("getVideoEmbedCode()") { [weak self] result, _ in
             guard let me = self,
                 let embedCode = result as? String else { return }
             me.currentVideoEmbedCode = embedCode
@@ -413,7 +431,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updateCurrentPlaylist() {
-        evaluatePlayerCommand("getPlaylist()") { [weak self] result in
+        evaluatePlayerCommand("getPlaylist()") { [weak self] result, _ in
             guard let me = self,
                 let playlist = result as? [String] else { return }
             me.currentPlaylist = playlist
@@ -421,7 +439,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updatePlaylistIndex() {
-        evaluatePlayerCommand("getPlaylistIndex()") { [weak self] result in
+        evaluatePlayerCommand("getPlaylistIndex()") { [weak self] result, _ in
             guard let me = self,
                 let index = result as? Int else { return }
             me.currentPlaylistIndex = index
@@ -429,7 +447,7 @@ extension YTSwiftyPlayer: WKScriptMessageHandler {
     }
     
     private func updateDuration() {
-        evaluatePlayerCommand("getDuration()") { [weak self] result in
+        evaluatePlayerCommand("getDuration()") { [weak self] result, _ in
             guard let me = self,
                 let duration = result as? Double else { return }
             me.duration = duration

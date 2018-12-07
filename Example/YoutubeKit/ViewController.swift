@@ -26,8 +26,9 @@ final class ViewController: UIViewController {
         // Create a new player
         player = YTSwiftyPlayer(frame: CGRect(x: 0, y: 0, width: 640, height: 480), parameters: parameters)
         
-        // Enable autoplay
+        // Enable autoplay while muted
         player.autoplayOnReady = true
+        player.automuteOnReady = true
 
         // Set player view
         view = player
