@@ -7,15 +7,15 @@
 
 public extension Requestable {
     
-    public var baseURL: URL {
+    var baseURL: URL {
         return URL(string: "https://www.googleapis.com/youtube/\(YoutubeKit.youtubeDataAPIVersion)/")!
     }
     
-    public var queryParameters: [String: Any] {
+    var queryParameters: [String: Any] {
         return [:]
     }
     
-    public var headerField: [String: String] {
+    var headerField: [String: String] {
         var header: [String: String] = [:]
         if isAuthorizedRequest {
             header["Authorization"] = "Bearer \(YoutubeKit.shared.accessToken)"
@@ -23,15 +23,15 @@ public extension Requestable {
         return header
     }
     
-    public var isAuthorizedRequest: Bool {
+    var isAuthorizedRequest: Bool {
         return false
     }
     
-    public var httpBody: Data? {
+    var httpBody: Data? {
         return nil
     }
 
-    public func makeURLRequest() -> URLRequest {
+    func makeURLRequest() -> URLRequest {
         let url = baseURL.appendingPathComponent(path)
         var urlRequest = URLRequest(url: url)
         var header: [String: String] = headerField
