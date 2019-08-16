@@ -215,7 +215,10 @@ public enum VideoEmbedParameter {
      In that scenario, the origin parameter identifies the widget provider's domain, but YouTube Analytics should not identify the widget provider as the actual traffic source. Instead, YouTube Analytics uses the widget_referrer parameter value to identify the domain associated with the traffic source.
      */
     case widgetReferrer(String)
-    
+
+    /// Setting the parameter's value to `false` causes the player to not display information like the video title and uploader before the video starts playing. If the player is loading a playlist, and you explicitly set the parameter value to 1, then, upon loading, the player will also display thumbnail images for the videos in the playlist. Note that this functionality is only supported for the AS3 player.
+    case showInfo(Bool)
+
     /// The player parameter.
     public var property: (key: String, value: AnyObject) {
         switch self {
@@ -261,6 +264,8 @@ public enum VideoEmbedParameter {
             return ("rel", relatedVideoPolicy.rawValue as AnyObject)
         case .widgetReferrer(let domain):
             return ("widget_referrer", domain as AnyObject)
+        case .showInfo(let isShow):
+            return ("showinfo", isShow.jsValue)
         }
     }
 }
