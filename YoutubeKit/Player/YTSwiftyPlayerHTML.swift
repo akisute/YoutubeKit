@@ -13,6 +13,7 @@ class YTSwiftyPlayerHTML {
         <!DOCTYPE html>
         <html>
         <head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>
         html,
         body {
@@ -43,13 +44,6 @@ class YTSwiftyPlayerHTML {
         }
         window.setInterval(updateTime, 500);
         });
-        $(document).ready(function(){
-        var meta = document.createElement('meta');
-        meta.setAttribute('name', 'viewport');
-        meta.setAttribute('content', 'width=device-width');
-        meta.setAttribute('initial-scale', '1');
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        })
         function onReady(event) {
         webkit.messageHandlers.onReady.postMessage('');
         }
